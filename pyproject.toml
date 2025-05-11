@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fancy_subprocess"
+version = "1.0"
+authors = [
+    { name="Tamás PEREGI", email="petamas@gmail.com" },
+]
+description = "subprocess.run() with formatted output, detailed error messages and retry capabilities"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+	"ntstatus<2",
+	"oslex<2",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/petamas/fancy-subprocess"
+"Bug Tracker" = "https://github.com/petamas/fancy-subprocess/issues"
