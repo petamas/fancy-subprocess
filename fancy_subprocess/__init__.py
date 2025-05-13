@@ -99,12 +99,12 @@ class RunProcessResult:
     `fancy_subprocess.run()` and similar functions return a `RunProcessResult` instance on success.
 
     `RunProcessResult` has the following properties:
-    - `exit_code: int` - Exit code of the finished process. (On Windows, this is a signed `int32` value, i.e. in the range of \[-2<sup>31</sup>, 2<sup>31</sup>-1\].)
+    - `exit_code: int` - Exit code of the finished process. (On Windows, this is a signed `int32` value, i.e. in the range of [-2<sup>31</sup>, 2<sup>31</sup>-1].)
     - `output: str` - Combination of the process's output on stdout and stderr.
     """
 
-    exit_code: int
-    output: str
+    exit_code: int = 0
+    output: str = ''
 
 @dataclass(kw_only=True, frozen=True)
 class RunProcessError(Exception):
@@ -128,7 +128,7 @@ class RunProcessError(Exception):
     """
 
     cmd: Sequence[str | Path]
-    result: RunProcessResult | OSError
+    result: RunProcessResult | OSError = RunProcessResult()
 
     @property
     def completed(self) -> bool:
@@ -155,7 +155,8 @@ class RunProcessError(Exception):
         else:
             raise ValueError('...')
 
-    def __str__(self) -> str:
+    @property
+    def message(self) -> str:
         if isinstance(self.result, RunProcessResult):
             exit_code_str = _stringify_exit_code(self.exit_code)
             if exit_code_str is not None:
@@ -165,6 +166,9 @@ class RunProcessError(Exception):
             return f'Command failed with exit code {self.exit_code}{exit_code_comment}: {_oslex_join(self.cmd)}'
         else:
             return f'Exception {type(self.result).__name__} with message "{str(self.result)}" was raised while trying to run command: {_oslex_join(self.cmd)}'
+
+    def __str__(self) -> str:
+        return self.message
 
 def SILENCE(msg: str) -> None:
     """
