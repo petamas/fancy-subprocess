@@ -263,6 +263,10 @@ Arguments (all of them except `name` are optional):
 
 Same as `fancy_subprocess.which()`, except it raises `ValueError` instead of returning `None` if it cannot find the executable.
 
+### `fancy_subprocess.reconfigure_standard_output_streams()`
+
+Calls `sys.stdout.reconfigure()` and `sys.stderr.reconfigure()` with the provided parameters. Raises `TypeError` if either `sys.stdout` or `sys.stderr` is not an instance of `io.TextIOWrapper`.
+
 ## Licensing
 
 This library is licensed under the MIT license.
