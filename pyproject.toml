@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fancy_subprocess"
-version = "1.1"
+version = "2.0"
 authors = [
     { name="Tamás PEREGI", email="petamas@gmail.com" },
 ]
@@ -34,5 +34,5 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/petamas/fancy-subprocess"
-"Bug Tracker" = "https://github.com/petamas/fancy-subprocess/issues"
+"Homepage" = "https://github.com/petamas/python-fancy-subprocess"
+"Bug Tracker" = "https://github.com/petamas/python-fancy-subprocess/issues"
