@@ -158,24 +158,40 @@ def run(
         else:
             env.update(env_overrides)
 
-    def run_with_params() -> RunProcessResult:
-        return _run_internal(
-                cmd,
-                print_message=print_message,
-                print_output=print_output,
-                description=description,
-                success=success,
-                flush_before_subprocess=flush_before_subprocess,
-                max_output_size=max_output_size,
-                env=env,
-                cwd=cwd,
-                encoding=encoding,
-                errors=errors)
+    def attempt_run() -> RunProcessResult:
+        print_message(description)
+
+        if flush_before_subprocess:
+            sys.stdout.flush()
+            sys.stderr.flush()
+
+        output = ''
+        try:
+            with subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, cwd=cwd, env=env, encoding=encoding, errors=errors) as proc:
+                assert proc.stdout is not None # passing stdout=subprocess.PIPE guarantees this
+
+                for line in iter(proc.stdout.readline, ''):
+                    line = line.removesuffix('\n')
+                    print_output(line)
+
+                    output += line + '\n'
+                    if len(output)>max_output_size+1:
+                        output = output[-max_output_size-1:] # drop the beginning of the string
+
+                proc.wait()
+                result = RunProcessResult(exit_code=proc.returncode, output=output.removesuffix('\n'))
+        except OSError as e:
+            raise RunProcessError(cmd=cmd, result=e) from e
+
+        if isinstance(success, AnyExitCode) or result.exit_code in success:
+            return result
+        else:
+            raise RunProcessError(cmd=cmd, result=result)
 
     sleep_seconds = retry_initial_sleep_seconds
     for attempts_left in range(retry, 0, -1):
         try:
-            return run_with_params()
+            return attempt_run()
         except RunProcessError as e:
             print_message(str(e))
             if attempts_left!=1:
@@ -186,47 +202,4 @@ def run(
             time.sleep(sleep_seconds)
             sleep_seconds *= retry_backoff
 
-    return run_with_params()
-
-def _run_internal(
-    cmd: Sequence[str | Path],
-    *,
-    print_message: Callable[[str], None],
-    print_output: Callable[[str], None],
-    description: str,
-    success: Sequence[int] | AnyExitCode,
-    flush_before_subprocess: bool,
-    max_output_size: int,
-    env: dict[str, str],
-    cwd: Optional[str | Path],
-    encoding: Optional[str],
-    errors: Optional[str],
-) -> RunProcessResult:
-    print_message(description)
-
-    if flush_before_subprocess:
-        sys.stdout.flush()
-        sys.stderr.flush()
-
-    output = ''
-    try:
-        with subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, cwd=cwd, env=env, encoding=encoding, errors=errors) as proc:
-            assert proc.stdout is not None # passing stdout=subprocess.PIPE guarantees this
-
-            for line in iter(proc.stdout.readline, ''):
-                line = line.removesuffix('\n')
-                print_output(line)
-
-                output += line + '\n'
-                if len(output)>max_output_size+1:
-                    output = output[-max_output_size-1:] # drop the beginning of the string
-
-            proc.wait()
-            result = RunProcessResult(exit_code=proc.returncode, output=output.removesuffix('\n'))
-    except OSError as e:
-        raise RunProcessError(cmd=cmd, result=e) from e
-
-    if isinstance(success, AnyExitCode) or result.exit_code in success:
-        return result
-    else:
-        raise RunProcessError(cmd=cmd, result=result)
+    return attempt_run()
