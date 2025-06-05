@@ -82,6 +82,48 @@ The `print_output` argument is replaced by `indent`, which can be set to either 
 
 All other `fancy_subprocess.run()` arguments are available and behave the same.
 
+### Writing your own wrapper
+
+Most projects will likely use `fancy_subprocess.run()` through their own wrapper around it, customizing the behaviour of the function using its various arguments. To simplify writing wrappers that specify some of the arguments, and expose the rest to callers, `fancy_subprocess` provides a couple helpers, allowing you to write type-safe wrappers like this:
+
+```
+import fancy_subprocess
+from typing import Unpack
+
+def grab_output(cmd: list[str], **kwargs: Unpack[fancy_subprocess.RunParams]) -> str:
+	# Raises ValueError if there are unknown parameters in kwargs or if a keyword argument's type is incorrect
+    fancy_subprocess.check_run_params(**kwargs)
+
+    # Make a copy of keyword arguments to be edited
+    forwarded_args = kwargs.copy()
+    # Make sure nothing's printed, raise ValueError if caller tries to specify "output_quiet" or "message_quiet"
+    fancy_subprocess.force_run_params(forwarded_args, message_quiet=True, output_quiet=True)
+    # Handle encoding/decoding errors by replacing them with placeholder character by default, but allow callers to still customize behaviour
+    fancy_subprocess.change_default_run_params(forwarded_args, errors='replace')
+
+    # Run command, raise fancy_subprocess.RunError on failure
+    result = fancy_subprocess.run(cmd, **forwarded_args)
+
+    # Return combined stdout and stderr
+    return result.output
+```
+
+The `grab_output()` function supports all `fancy_subprocess.run()` arguments (eg. `retry`), except for `message_quiet` and `output_quiet`. If `errors` is unspecified or set to `None`, it uses `errors='replace'` instead of the default `errors='strict'` behaviour. It also passes `mypy --strict`.
+
+(Using `typing.Unpack` requires Python 3.11 or later. In Python 3.10, use the `typing_extensions` module from PyPI.)
+
+### Predefined printing functions
+
+There are various predefined functions projects can use as the `print_message` and `print_output` parameters of `fancy_subprocess.run()`:
+
+- `fancy_subprocess.default_print` prints the line to `sys.stdout`, then flushes it.
+- `fancy_subprocess.errors_print` prints the line to `sys.stderr`, then flushes it.
+- `fancy_subprocess.silenced_print` does not print anything. It can be used as an alternative to `output_quiet=True` if the caller does not want to change the default `description`.
+- `fancy_subprocess.indented_print` prints the line to `sys.stdout` indented by 4 spaces, then flushes the file.
+- `fancy_subprocess.indented_print_factory(indent)` returns a function that calls `fancy_subprocess.indented_print` with its parameter and the specified indent instead of the default 4 spaces.
+- `logging.error(line)`, `logging.info(line)`, etc. can be used to redirect the messages (or even the output) to Python's builtin logging subsystem.
+- The builtin `print` function can also be used to print without flushing.
+
 ### Example outputs
 
 #### Success
