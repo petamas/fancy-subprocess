@@ -8,13 +8,14 @@ import os
 import subprocess
 import sys
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 from typing_extensions import Unpack
 
+from fancy_subprocess._print import default_print, PrintFunction, silenced_print
 from fancy_subprocess._run_param import AnyExitCode, check_run_params, RunParams, Success
 from fancy_subprocess._utils import oslex_join, stringify_exit_code, value_or
 
@@ -98,8 +99,8 @@ class RunError(Exception):
 def run(
     cmd: Sequence[str | Path],
     *,
-    print_message: Optional[Callable[[str], None]] = None,
-    print_output: Optional[Callable[[str], None]] = None,
+    print_message: Optional[PrintFunction] = None,
+    print_output: Optional[PrintFunction] = None,
     **kwargs: Unpack[RunParams],
 ) -> RunResult:
     """
@@ -116,9 +117,11 @@ def run(
 
     Arguments (all of them except `cmd` are optional):
     - `cmd: Sequence[str | Path]` - Command to run. See `subprocess.run()`'s documentation for the interpretation of `cmd[0]`. It is recommended to use `fancy_subprocess.which()` to produce `cmd[0]`.
-    - `print_message: Optional[Callable[[str], None]]` - Function used to print informational messages. If unspecified or set to `None`, defaults to `print(flush=True)`. Use `print_message=fancy_subprocess.SILENCE` to disable printing informational messages.
-    - `print_output: Optional[Callable[[str], None]]` - Function used to print a line of the output of the command. If unspecified or set to `None`, defaults to `print(flush=True)`. Use `print_message=fancy_subprocess.SILENCE` to disable printing the command's output.
-    - `description: str` - Description printed before running the command. If unspecified or set to `None`, defaults to `Running command: ...`.
+    - `print_message: Callable[[str], None]` - Function used to print informational messages. If unspecified or set to `None`, defaults to `fancy_subprocess.default_print`. Use `message_quiet=True` to disable printing informational messages.
+    - `print_output: Callable[[str], None]` - Function used to print a line of the output of the command. If unspecified or set to `None`, defaults to `fancy_subprocess.default_print`. Use `output_quiet=True` to disable printing the command's output.
+    - `message_quiet: bool` - If `True`, `print_message` is ignored, and no informational messages are printed. If unspecified or set to `None`, defaults to `False`.
+    - `output_quiet: bool` - If `True`, `print_output` is ignored, and the command's output it not printed. If unspecified or set to `None`, defaults to `False`. Note that this parameter also affects the default value of `description`.
+    - `description: str` - Description printed before running the command. If unspecified or set to `None`, defaults to `Running command: ...` when `output_quiet` is `False`, and `Running command (output silenced): ...` when `output_quiet` is `True`.
     - `success: Sequence[int] | AnyExitCode` - List of exit codes that should be considered successful. If set to `fancy_subprocess.ANY_EXIT_CODE`, then all exit codes are considered successful. If unspecified or set to `None`, defaults to `[0]`. Note that 0 is not automatically included in the list of successful exit codes, so if a list without 0 is specified, then the function will consider 0 a failure.
     - `flush_before_subprocess: bool` - If `True`, flushes both the standard output and error streams before running the command. If unspecified or set to `None`, defaults to `True`.
     - `max_output_size: int` - Maximum number of characters to be recorded in the `output` field of `RunResult`. If the command produces more than `max_output_size` characters, only the last `max_output_size` will be recorded. If unspecified or set to `None`, defaults to 10,000,000.
@@ -133,13 +136,13 @@ def run(
 
     check_run_params(**kwargs)
 
-    if print_message is None:
-        print_message = lambda msg: print(msg, flush=True)
-
-    if print_output is None:
-        print_output = lambda line: print(line, flush=True)
-
-    description = value_or(kwargs.get('description'), f'Running command: {oslex_join(cmd)}')
+    message_quiet = value_or(kwargs.get('message_quiet'), False)
+    output_quiet = value_or(kwargs.get('output_quiet'), False)
+    if output_quiet:
+        default_description = f'Running command (output silenced): {oslex_join(cmd)}'
+    else:
+        default_description = f'Running command: {oslex_join(cmd)}'
+    description = value_or(kwargs.get('description'), default_description)
     success: Success = value_or(kwargs.get('success'), [0])
     flush_before_subprocess = value_or(kwargs.get('flush_before_subprocess'), True)
     max_output_size = value_or(kwargs.get('max_output_size'), 10*1000*1000)
@@ -150,6 +153,16 @@ def run(
     cwd = kwargs.get('cwd')
     encoding = kwargs.get('encoding')
     errors = kwargs.get('errors')
+
+    if message_quiet:
+        print_message = silenced_print
+    else:
+        print_message = value_or(print_message, default_print)
+
+    if output_quiet:
+        print_output = silenced_print
+    else:
+        print_output = value_or(print_output, default_print)
 
     env = dict(os.environ)
     if sys.platform=='win32':

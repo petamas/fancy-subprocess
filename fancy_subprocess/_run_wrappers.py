@@ -3,28 +3,29 @@ __all__ = [
     'run_indented',
 ]
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional
 
 from typing_extensions import Unpack
 
+from fancy_subprocess._print import Indent, indented_print_factory, PrintFunction, silenced_print
 from fancy_subprocess._run_core import run, RunResult
-from fancy_subprocess._run_param import change_default_run_params, check_run_params, RunParams
+from fancy_subprocess._run_param import check_run_params, force_run_params, RunParams
 from fancy_subprocess._utils import oslex_join
 
 def run_silenced(
     cmd: Sequence[str | Path],
     *,
-    print_message: Optional[Callable[[str], None]] = None,
+    print_message: Optional[PrintFunction] = None,
     **kwargs: Unpack[RunParams],
 ) -> RunResult:
     """
     Specialized version of `fancy_subprocess.run()`, primarily used to run a command and later process its output.
 
-    Differences from `fancy_subprocess.run()`:
-    - `print_output` is not customizable, it is always set to `fancy_subprocess.SILENCE`, which disables printing the command's output.
-    - `description` is customizable, but its default value (used when it is either not specified or set to `None`) changes to `Running command (output silenced): ...`.
+    Differences compared to `fancy_subprocess.run()`:
+    - `output_quiet` cannot be set from the calling side, it is always set to `True`. Note that this affects `description`'s default value.
+    - `print_output` cannot be set from the calling side (because it wouldn't matter anyway because of `output_quiet=True`).
 
     All other `fancy_subprocess.run()` arguments are available and behave the same.
     """
@@ -32,20 +33,20 @@ def run_silenced(
     check_run_params(**kwargs)
 
     forwarded_args = kwargs.copy()
-    change_default_run_params(forwarded_args, description=f'Running command (output silenced): {oslex_join(cmd)}')
+    force_run_params(forwarded_args, output_quiet=True)
 
     return run(
         cmd,
         print_message=print_message,
-        print_output=lambda line: None,
+        print_output=silenced_print,
         **forwarded_args,
     )
 
 def run_indented(
     cmd: Sequence[str | Path],
     *,
-    print_message: Optional[Callable[[str], None]] = None,
-    indent: str | int = 4,
+    print_message: Optional[PrintFunction] = None,
+    indent: Optional[Indent] = None,
     **kwargs: Unpack[RunParams],
 ) -> RunResult:
     """
@@ -58,12 +59,9 @@ def run_indented(
 
     check_run_params(**kwargs)
 
-    if isinstance(indent, int):
-        indent = indent*' '
-
     return run(
         cmd,
         print_message=print_message,
-        print_output=lambda line: print(f'{indent}{line}', flush=True),
+        print_output=indented_print_factory(indent),
         **kwargs,
     )

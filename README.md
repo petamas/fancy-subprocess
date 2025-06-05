@@ -17,9 +17,13 @@ Key differences compared to `subprocess.run()`:
 
 Arguments (all of them except `cmd` are optional):
 - `cmd: Sequence[str | Path]` - Command to run. See `subprocess.run()`'s documentation for the interpretation of `cmd[0]`. It is recommended to use `fancy_subprocess.which()` to produce `cmd[0]`.
-- `print_message: Optional[Callable[[str], None]]` - Function used to print informational messages. If unspecified or set to `None`, defaults to `print(flush=True)`. Use `print_message=fancy_subprocess.SILENCE` to disable printing informational messages.
-- `print_output: Optional[Callable[[str], None]]` - Function used to print a line of the output of the command. If unspecified or set to `None`, defaults to `print(flush=True)`. Use `print_message=fancy_subprocess.SILENCE` to disable printing the command's output.
-- `description: str` - Description printed before running the command. If unspecified or set to `None`, defaults to `Running command: ...`.
+- `print_message: Callable[[str], None]` - Function used to print informational messages. If unspecified or set to `None`, defaults to `fancy_subprocess.default_print`. Use `message_quiet=True` to disable printing informational messages.
+	- The type of this argument is also aliased as `fancy_subprocess.PrintFunction`.
+- `print_output: Callable[[str], None]` - Function used to print a line of the output of the command. If unspecified or set to `None`, defaults to `fancy_subprocess.default_print`. Use `output_quiet=True` to disable printing the command's output.
+	- The type of this argument is also aliased as `fancy_subprocess.PrintFunction`.
+- `message_quiet: bool` - If `True`, `print_message` is ignored, and no informational messages are printed. If unspecified or set to `None`, defaults to `False`.
+- `output_quiet: bool` - If `True`, `print_output` is ignored, and the command's output it not printed. If unspecified or set to `None`, defaults to `False`. Note that this parameter also affects the default value of `description`.
+- `description: str` - Description printed before running the command. If unspecified or set to `None`, defaults to `Running command: ...` when `output_quiet` is `False`, and `Running command (output silenced): ...` when `output_quiet` is `True`.
 - `success: Sequence[int] | AnyExitCode` - List of exit codes that should be considered successful. If set to `fancy_subprocess.ANY_EXIT_CODE`, then all exit codes are considered successful. If unspecified or set to `None`, defaults to `[0]`. Note that 0 is not automatically included in the list of successful exit codes, so if a list without 0 is specified, then the function will consider 0 a failure.
 	- The type of this argument is also aliased as `fancy_subprocess.Success`.
 - `flush_before_subprocess: bool` - If `True`, flushes both the standard output and error streams before running the command. If unspecified or set to `None`, defaults to `True`.
@@ -64,9 +68,9 @@ Calling `str()` on a `RunError` object returns a detailed one-line description o
 
 Specialized version of `fancy_subprocess.run()`, primarily used to run a command and later process its output.
 
-Differences from `fancy_subprocess.run()`:
-- `print_output` is not customizable, it is always set to `fancy_subprocess.SILENCE`, which disables printing the command's output.
-- `description` is customizable, but its default value (used when it is either not specified or set to `None`) changes to `Running command (output silenced): ...`.
+Differences compared to `fancy_subprocess.run()`:
+- `output_quiet` cannot be set from the calling side, it is always set to `True`. Note that this affects `description`'s default value.
+- `print_output` cannot be set from the calling side (because it wouldn't matter anyway because of `output_quiet=True`).
 
 All other `fancy_subprocess.run()` arguments are available and behave the same.
 

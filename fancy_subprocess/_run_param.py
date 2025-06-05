@@ -30,6 +30,8 @@ Success = Sequence[int] | AnyExitCode
 EnvOverrides = Mapping[str, str]
 
 class RunParams(TypedDict, total=False):
+    message_quiet: Optional[bool]
+    output_quiet: Optional[bool]
     description: Optional[str]
     success: Optional[Success]
     flush_before_subprocess: Optional[bool]
