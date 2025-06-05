@@ -35,6 +35,7 @@ class RunParams(TypedDict, total=False):
     description: Optional[str]
     success: Optional[Success]
     flush_before_subprocess: Optional[bool]
+    trim_output_lines: Optional[bool]
     max_output_size: Optional[int]
     retry: Optional[int]
     retry_initial_sleep_seconds: Optional[float]
