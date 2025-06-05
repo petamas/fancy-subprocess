@@ -1,6 +1,13 @@
 __all__ = [
+    'RunProcessError',
+    'RunProcessResult',
     'SILENCE',
 ]
+
+from fancy_subprocess._run_core import RunError, RunResult
+
+RunProcessError = RunError
+RunProcessResult = RunResult
 
 def SILENCE(msg: str) -> None:
     """

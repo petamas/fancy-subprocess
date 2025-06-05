@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Optional
 
-from fancy_subprocess._run_core import run, RunProcessResult
+from fancy_subprocess._run_core import run, RunResult
 from fancy_subprocess._run_param import AnyExitCode
 from fancy_subprocess._utils import oslex_join
 
@@ -26,7 +26,7 @@ def run_silenced(
     cwd: Optional[str | Path] = None,
     encoding: Optional[str] = None,
     errors: Optional[str] = None,
-) -> RunProcessResult:
+) -> RunResult:
     """
     Specialized version of `fancy_subprocess.run()`, primarily used to run a command and later process its output.
 
@@ -73,7 +73,7 @@ def run_indented(
     cwd: Optional[str | Path] = None,
     encoding: Optional[str] = None,
     errors: Optional[str] = None,
-) -> RunProcessResult:
+) -> RunResult:
     """
     Specialized version of `fancy_subprocess.run()` which prints the command's output indented by a user-defined amount.
 
