@@ -8,13 +8,15 @@ import os
 import subprocess
 import sys
 import time
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from fancy_subprocess._run_param import AnyExitCode
-from fancy_subprocess._utils import oslex_join, stringify_exit_code
+from typing_extensions import Unpack
+
+from fancy_subprocess._run_param import AnyExitCode, check_run_params, RunParams, Success
+from fancy_subprocess._utils import oslex_join, stringify_exit_code, value_or
 
 @dataclass(kw_only=True, frozen=True)
 class RunResult:
@@ -98,17 +100,7 @@ def run(
     *,
     print_message: Optional[Callable[[str], None]] = None,
     print_output: Optional[Callable[[str], None]] = None,
-    description: Optional[str] = None,
-    success: Sequence[int] | AnyExitCode | None = None,
-    flush_before_subprocess: bool = True,
-    max_output_size: int = 10*1000*1000,
-    retry: int = 0,
-    retry_initial_sleep_seconds: float = 10,
-    retry_backoff: float = 2,
-    env_overrides: Optional[Mapping[str, str]] = None,
-    cwd: Optional[str | Path] = None,
-    encoding: Optional[str] = None,
-    errors: Optional[str] = None,
+    **kwargs: Unpack[RunParams],
 ) -> RunResult:
     """
     An extended (and in some aspects, constrained) version of `subprocess.run()`. It runs a command and prints its output line-by-line using a customizable `print_output` function, while printing informational messages (eg. which command it is running) using a customizable `print_message` function.
@@ -124,20 +116,22 @@ def run(
 
     Arguments (all of them except `cmd` are optional):
     - `cmd: Sequence[str | Path]` - Command to run. See `subprocess.run()`'s documentation for the interpretation of `cmd[0]`. It is recommended to use `fancy_subprocess.which()` to produce `cmd[0]`.
-    - `print_message: Optional[Callable[[str], None]]` - Function used to print informational messages. If not set or `None`, defaults to `print(flush=True)`. Use `print_message=fancy_subprocess.SILENCE` to disable printing informational messages.
-    - `print_output: Optional[Callable[[str], None]]` - Function used to print a line of the output of the command. If not set or `None`, defaults to `print(flush=True)`. Use `print_message=fancy_subprocess.SILENCE` to disable printing the command's output.
-    - `description: Optional[str]` - Description printed before running the command. If not set or `None`, defaults to `Running command: ...`.
-    - `success: Sequence[int] | AnyExitCode | None` - List of exit codes that should be considered successful. If set to `fancy_subprocess.ANY_EXIT_CODE`, then all exit codes are considered successful. If not set or `None`, defaults to `[0]`. Note that 0 is not automatically included in the list of successful exit codes, so if a list without 0 is specified, then the function will consider 0 a failure.
-    - `flush_before_subprocess: bool` - If `True`, flushes both the standard output and error streams before running the command. Defaults to `True`.
-    - `max_output_size: int` - Maximum number of characters to be recorded in the `output` field of `RunResult`. If the command produces more than `max_output_size` characters, only the last `max_output_size` will be recorded. Defaults to 10,000,000.
-    - `retry: int` - Number of times to retry running the command on failure. Note that the total number of attempts is one greater than what's specified. (I.e. `retry=2` attempts to run the command 3 times.) Defaults to 0.
-    - `retry_initial_sleep_seconds: float` - Number of seconds to wait before retrying for the first time. Defaults to 10.
-    - `retry_backoff: float` - Factor used to increase wait times before subsequent retries. Defaults to 2.
-    - `env_overrides: Optional[Mapping[str, str]]` - Dictionary used to set environment variables. Note that unline the `env` argument of `subprocess.run()`, `env_overrides` does not need to contain all environment variables, only the ones you want to add/modify compared to os.environ.
-    - `cwd: Optional[str | Path]` - If not `None`, change current working directory to `cwd` before running the command.
-    - `encoding: Optional[str]` - This encoding will be used to open stdout and stderr of the command. If not set or `None`, see default behaviour in `io.TextIOWrapper`'s documentation.
-    - `errors: Optional[str]` - This specifies how text decoding errors will be handled. See details in `io.TextIOWrapper`'s documentation.
+    - `print_message: Optional[Callable[[str], None]]` - Function used to print informational messages. If unspecified or set to `None`, defaults to `print(flush=True)`. Use `print_message=fancy_subprocess.SILENCE` to disable printing informational messages.
+    - `print_output: Optional[Callable[[str], None]]` - Function used to print a line of the output of the command. If unspecified or set to `None`, defaults to `print(flush=True)`. Use `print_message=fancy_subprocess.SILENCE` to disable printing the command's output.
+    - `description: str` - Description printed before running the command. If unspecified or set to `None`, defaults to `Running command: ...`.
+    - `success: Sequence[int] | AnyExitCode` - List of exit codes that should be considered successful. If set to `fancy_subprocess.ANY_EXIT_CODE`, then all exit codes are considered successful. If unspecified or set to `None`, defaults to `[0]`. Note that 0 is not automatically included in the list of successful exit codes, so if a list without 0 is specified, then the function will consider 0 a failure.
+    - `flush_before_subprocess: bool` - If `True`, flushes both the standard output and error streams before running the command. If unspecified or set to `None`, defaults to `True`.
+    - `max_output_size: int` - Maximum number of characters to be recorded in the `output` field of `RunResult`. If the command produces more than `max_output_size` characters, only the last `max_output_size` will be recorded. If unspecified or set to `None`, defaults to 10,000,000.
+    - `retry: int` - Number of times to retry running the command on failure. Note that the total number of attempts is one greater than what's specified. (I.e. `retry=2` attempts to run the command 3 times.) If unspecified or set to `None`, defaults to 0.
+    - `retry_initial_sleep_seconds: float` - Number of seconds to wait before retrying for the first time. If unspecified or set to `None`, defaults to 10.
+    - `retry_backoff: float` - Factor used to increase wait times before subsequent retries. If unspecified or set to `None`, defaults to 2.
+    - `env_overrides: Mapping[str, str]` - Dictionary used to set environment variables. Note that unline the `env` argument of `subprocess.run()`, `env_overrides` does not need to contain all environment variables, only the ones you want to add/modify compared to os.environ. If unspecified or set to `None`, defaults to empty dictionary, i.e. no change to the environment.
+    - `cwd: str | Path` - If not `None`, change current working directory to `cwd` before running the command.
+    - `encoding: str` - This encoding will be used to open stdout and stderr of the command. If unspecified or set to `None`, see default behaviour in `io.TextIOWrapper`'s documentation.
+    - `errors: str` - This specifies how text decoding errors will be handled. See details (including what happens if unspecified or set to `None`) in `io.TextIOWrapper`'s documentation.
     """
+
+    check_run_params(**kwargs)
 
     if print_message is None:
         print_message = lambda msg: print(msg, flush=True)
@@ -145,18 +139,23 @@ def run(
     if print_output is None:
         print_output = lambda line: print(line, flush=True)
 
-    if description is None:
-        description = f'Running command: {oslex_join(cmd)}'
-
-    if success is None:
-        success = [0]
+    description = value_or(kwargs.get('description'), f'Running command: {oslex_join(cmd)}')
+    success: Success = value_or(kwargs.get('success'), [0])
+    flush_before_subprocess = value_or(kwargs.get('flush_before_subprocess'), True)
+    max_output_size = value_or(kwargs.get('max_output_size'), 10*1000*1000)
+    retry = value_or(kwargs.get('retry'), 0)
+    retry_initial_sleep_seconds = value_or(kwargs.get('retry_initial_sleep_seconds'), 10)
+    retry_backoff = value_or(kwargs.get('retry_backoff'), 2)
+    env_overrides = value_or(kwargs.get('env_overrides'), dict())
+    cwd = kwargs.get('cwd')
+    encoding = kwargs.get('encoding')
+    errors = kwargs.get('errors')
 
     env = dict(os.environ)
-    if env_overrides is not None:
-        if sys.platform=='win32':
-            env.update((key.upper(), value) for key,value in env_overrides.items())
-        else:
-            env.update(env_overrides)
+    if sys.platform=='win32':
+        env.update((key.upper(), value) for key,value in env_overrides.items())
+    else:
+        env.update(env_overrides)
 
     def attempt_run() -> RunResult:
         print_message(description)
