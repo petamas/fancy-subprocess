@@ -2,9 +2,7 @@
 
 `fancy-subprocess` provides variants of `subprocess.run()` with formatted output, detailed error messages and retry capabilities.
 
-## Package contents
-
-### `fancy_subprocess.run()`
+## `fancy_subprocess.run()` and related functionality
 
 An extended (and in some aspects, constrained) version of `subprocess.run()`. It runs a command and prints its output line-by-line using a customizable `print_output` function, while printing informational messages (eg. which command it is running) using a customizable `print_message` function.
 
@@ -33,7 +31,7 @@ Arguments (all of them except `cmd` are optional):
 - `encoding: Optional[str]` - This encoding will be used to open stdout and stderr of the command. If not set or `None`, see default behaviour in `io.TextIOWrapper`'s documentation.
 - `errors: Optional[str]` - This specifies how text decoding errors will be handled. See details in `io.TextIOWrapper`'s documentation.
 
-#### Return value: `fancy_subprocess.RunResult`
+### Return value: `fancy_subprocess.RunResult`
 
 `fancy_subprocess.run()` and similar functions return a `RunResult` instance on success.
 
@@ -41,7 +39,7 @@ Arguments (all of them except `cmd` are optional):
 - `exit_code: int` - Exit code of the finished process. (On Windows, this is a signed `int32` value, i.e. in the range of \[-2<sup>31</sup>, 2<sup>31</sup>-1\].)
 - `output: str` - Combination of the process's output on stdout and stderr.
 
-#### Exception: `fancy_subprocess.RunError`
+### Exception: `fancy_subprocess.RunError`
 
 `fancy_subprocess.run()` and similar functions raise `RunError` on error. There are two kinds of errors that result in a `RunError`:
 - If the requested command has failed, the `completed` property will be `True`, and the `exit_code` and `output` properties will be set.
@@ -78,22 +76,9 @@ The `print_output` argument is replaced by `indent`, which can be set to either 
 
 All other `fancy_subprocess.run()` arguments are available and behave the same.
 
-### `fancy_subprocess.which()`
+### Example outputs
 
-Wrapper for `shutil.which()` which returns the result as an absolute `Path` (or `None` if it fails to find the executable). It also has a couple extra features, see below.
-
-Arguments (all of them except `name` are optional):
-- `name: str` - Executable name to look up.
-- `path: None | str | Sequence[str | Path]` - Directory list to look up `name` in. If set to `None`, or set to a string, then it is passed to `shutil.which()` as-is. If set to a list, concatenates the list items using `os.pathsep`, and passes the result to `shutil.which()`. Defaults to `None`. See `shutil.which()`'s documentation on exact behaviour of this argument.
-- `cwd: Optional[str | Path]` - If specified, then changes the current working directory to `cwd` for the duration of the `shutil.which()` call. Note that since it is changing global state (the current working directory), it is inherently not thread-safe.
-
-### `fancy_subprocess.checked_which()`
-
-Same as `fancy_subprocess.which()`, except it raises `ValueError` instead of returning `None` if it cannot find the executable.
-
-## Examples
-
-### Success
+#### Success
 
 Take this script:
 
@@ -145,7 +130,7 @@ Running the script will produce the following output (on Windows):
 ```
 
 
-### Failed command on Windows
+#### Failed command on Windows
 
 Take this script:
 
@@ -170,7 +155,7 @@ Noooooo!
 Command failed with exit code -1072103376 (STATUS_LOG_CORRUPTION_DETECTED): d:\projects\python-libs\fancy_subprocess\.venv\Scripts\python.exe -c "import sys; print("\^"Noooooo^!\^""); sys.exit(-1072103376)"
 ```
 
-### Killed command on Linux
+#### Killed command on Linux
 
 Take this script:
 
@@ -194,7 +179,7 @@ Sweet dreams!
 Command failed with exit code -9 (SIGKILL): /home/petamas/.venv/bin/python -c 'import time; time.sleep(60)'
  ```
 
-### Failure to find executable
+#### Failure to find executable
 
 Take this script:
 
@@ -213,6 +198,21 @@ Running the script will produce the following output (exact error message may de
 Running command: foo --bar baz
 Exception FileNotFoundError with message "[Errno 2] No such file or directory: 'foo'" was raised while trying to run command: foo --bar baz
 ```
+
+## Other utilities
+
+### `fancy_subprocess.which()`
+
+Wrapper for `shutil.which()` which returns the result as an absolute `Path` (or `None` if it fails to find the executable). It also has a couple extra features, see below.
+
+Arguments (all of them except `name` are optional):
+- `name: str` - Executable name to look up.
+- `path: None | str | Sequence[str | Path]` - Directory list to look up `name` in. If set to `None`, or set to a string, then it is passed to `shutil.which()` as-is. If set to a list, concatenates the list items using `os.pathsep`, and passes the result to `shutil.which()`. Defaults to `None`. See `shutil.which()`'s documentation on exact behaviour of this argument.
+- `cwd: Optional[str | Path]` - If specified, then changes the current working directory to `cwd` for the duration of the `shutil.which()` call. Note that since it is changing global state (the current working directory), it is inherently not thread-safe.
+
+### `fancy_subprocess.checked_which()`
+
+Same as `fancy_subprocess.which()`, except it raises `ValueError` instead of returning `None` if it cannot find the executable.
 
 ## Licensing
 
