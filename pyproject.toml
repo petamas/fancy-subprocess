@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fancy_subprocess"
-version = "2.0"
+version = "2.1"
 authors = [
     { name="Tamás PEREGI", email="petamas@gmail.com" },
 ]
