@@ -250,19 +250,6 @@ Exception FileNotFoundError with message "[Errno 2] No such file or directory: '
 
 ## Other utilities
 
-### `fancy_subprocess.which()`
-
-Wrapper for `shutil.which()` which returns the result as an absolute `Path` (or `None` if it fails to find the executable). It also has a couple extra features, see below.
-
-Arguments (all of them except `name` are optional):
-- `name: str` - Executable name to look up.
-- `path: None | str | Sequence[str | Path]` - Directory list to look up `name` in. If set to `None`, or set to a string, then it is passed to `shutil.which()` as-is. If set to a list, concatenates the list items using `os.pathsep`, and passes the result to `shutil.which()`. Defaults to `None`. See `shutil.which()`'s documentation on exact behaviour of this argument.
-- `cwd: Optional[str | Path]` - If specified, then changes the current working directory to `cwd` for the duration of the `shutil.which()` call. Note that since it is changing global state (the current working directory), it is inherently not thread-safe.
-
-### `fancy_subprocess.checked_which()`
-
-Same as `fancy_subprocess.which()`, except it raises `ValueError` instead of returning `None` if it cannot find the executable.
-
 ### `fancy_subprocess.reconfigure_standard_output_streams()`
 
 Calls `sys.stdout.reconfigure()` and `sys.stderr.reconfigure()` with the provided parameters. Raises `TypeError` if either `sys.stdout` or `sys.stderr` is not an instance of `io.TextIOWrapper`.

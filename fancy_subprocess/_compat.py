@@ -1,8 +1,12 @@
 __all__ = [
+    'checked_which',
     'RunProcessError',
     'RunProcessResult',
     'SILENCE',
+    'which',
 ]
+
+from pathext import checked_which, which
 
 from fancy_subprocess._run_core import RunError, RunResult
 
