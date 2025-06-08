@@ -113,7 +113,7 @@ def run(
     - The output of the command is always captured, but it is also immediately printed using `print_output`.
     - The exit code of the command is checked, and an exception is raised on failure, like `subprocess.run(check=True)`, but the list of exit codes treated as success is customizable, and the raised exception is `RunError` instead of `CalledProcessError`.
     - `OSError` is never raised, it gets converted to `RunError`.
-    - `RunResult` is returned instead of `CompletedProcess` on success.
+    - `RunResult` is returned instead of `CompletedProcess` on success.
 
     Arguments (all of them except `cmd` are optional):
     - `cmd: Sequence[str | Path]` - Command to run. See `subprocess.run()`'s documentation for the interpretation of `cmd[0]`. It is recommended to use `fancy_subprocess.which()` to produce `cmd[0]`.
