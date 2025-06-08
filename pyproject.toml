@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "fancy_subprocess"
+name = "fancy-subprocess"
 version = "2.1"
 authors = [
     { name="Tamás PEREGI", email="petamas@gmail.com" },
