@@ -36,7 +36,7 @@ Arguments (all of them except `cmd` are optional):
     - The type of this argument is also aliased as `fancy_subprocess.EnvOverrides`.
 - `cwd: str | Path` - If not `None`, change current working directory to `cwd` before running the command.
 - `encoding: str` - This encoding will be used to open stdout and stderr of the command. If unspecified or set to `None`, see default behaviour in `io.TextIOWrapper`'s documentation.
-- `errors: str` - This specifies how text decoding errors will be handled. See details (including what happens if unspecified or set to `None`) in `io.TextIOWrapper`'s documentation.
+- `errors: str` - This specifies how text decoding errors will be handled. (See possible options in `io.TextIOWrapper`'s documentation.) If unspecified or set to `None`, defaults to `replace`. Note that this differs from `io.TextIOWrapper`'s default behaviour, which is to use `strict`.
 
 ### Return value: `fancy_subprocess.RunResult`
 
@@ -100,7 +100,7 @@ def grab_output(cmd: list[str], **kwargs: Unpack[fancy_subprocess.RunParams]) ->
     # Make sure nothing's printed, raise ValueError if caller tries to specify "output_quiet" or "message_quiet"
     fancy_subprocess.force_run_params(forwarded_args, message_quiet=True, output_quiet=True)
     # Handle encoding/decoding errors by replacing them with placeholder character by default, but allow callers to still customize behaviour
-    fancy_subprocess.change_default_run_params(forwarded_args, errors='replace')
+    fancy_subprocess.change_default_run_params(forwarded_args, errors='backslashreplace')
 
     # Run command, raise fancy_subprocess.RunError on failure
     result = fancy_subprocess.run(cmd, **forwarded_args)
@@ -109,7 +109,7 @@ def grab_output(cmd: list[str], **kwargs: Unpack[fancy_subprocess.RunParams]) ->
     return result.output
 ```
 
-The `grab_output()` function supports all `fancy_subprocess.run()` arguments (eg. `retry`), except for `message_quiet` and `output_quiet`. If `errors` is unspecified or set to `None`, it uses `errors='replace'` instead of the default `errors='strict'` behaviour. It also passes `mypy --strict`.
+The `grab_output()` function supports all `fancy_subprocess.run()` arguments (eg. `retry`), except for `message_quiet` and `output_quiet`. If `errors` is unspecified or set to `None`, it uses `errors='backslashreplace'` instead of the default `errors='replace'` behaviour. It also passes `mypy --strict`.
 
 (Using `typing.Unpack` requires Python 3.11 or later. In Python 3.10, use the `typing_extensions` module from PyPI.)
 

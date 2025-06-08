@@ -132,7 +132,7 @@ def run(
     - `env_overrides: Mapping[str, str]` - Dictionary used to set environment variables. Note that unline the `env` argument of `subprocess.run()`, `env_overrides` does not need to contain all environment variables, only the ones you want to add/modify compared to os.environ. If unspecified or set to `None`, defaults to empty dictionary, i.e. no change to the environment.
     - `cwd: str | Path` - If not `None`, change current working directory to `cwd` before running the command.
     - `encoding: str` - This encoding will be used to open stdout and stderr of the command. If unspecified or set to `None`, see default behaviour in `io.TextIOWrapper`'s documentation.
-    - `errors: str` - This specifies how text decoding errors will be handled. See details (including what happens if unspecified or set to `None`) in `io.TextIOWrapper`'s documentation.
+    - `errors: str` - This specifies how text decoding errors will be handled. (See possible options in `io.TextIOWrapper`'s documentation.) If unspecified or set to `None`, defaults to `replace`. Note that this differs from `io.TextIOWrapper`'s default behaviour, which is to use `strict`.
     """
 
     check_run_params(**kwargs)
@@ -154,7 +154,7 @@ def run(
     env_overrides = value_or(kwargs.get('env_overrides'), dict())
     cwd = kwargs.get('cwd')
     encoding = kwargs.get('encoding')
-    errors = kwargs.get('errors')
+    errors = value_or(kwargs.get('errors'), 'replace')
 
     if message_quiet:
         print_message = silenced_print
