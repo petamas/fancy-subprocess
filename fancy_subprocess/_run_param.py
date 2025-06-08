@@ -44,6 +44,7 @@ class RunParams(TypedDict, total=False):
     cwd: Optional[str | Path]
     encoding: Optional[str]
     errors: Optional[str]
+    replace_fffd_with_question_mark: Optional[bool]
 
 def check_run_params(**kwargs: Unpack[RunParams]) -> None:
     try:

@@ -133,6 +133,7 @@ def run(
     - `cwd: str | Path` - If not `None`, change current working directory to `cwd` before running the command.
     - `encoding: str` - This encoding will be used to open stdout and stderr of the command. If unspecified or set to `None`, see default behaviour in `io.TextIOWrapper`'s documentation.
     - `errors: str` - This specifies how text decoding errors will be handled. (See possible options in `io.TextIOWrapper`'s documentation.) If unspecified or set to `None`, defaults to `replace`. Note that this differs from `io.TextIOWrapper`'s default behaviour, which is to use `strict`.
+    - `replace_fffd_with_question_mark: bool` - Replace Unicode Replacement Character U+FFFD (`�`, usually introduced by `errors='replace'`) with ASCII question mark (`?`) in lines of the output of the command before calling `print_output` and adding them to the `output` field of `RunResult`. If unspecified or set to `None`, defaults to `True`.
     """
 
     check_run_params(**kwargs)
@@ -155,6 +156,7 @@ def run(
     cwd = kwargs.get('cwd')
     encoding = kwargs.get('encoding')
     errors = value_or(kwargs.get('errors'), 'replace')
+    replace_fffd_with_question_mark = value_or(kwargs.get('replace_fffd_with_question_mark'), True)
 
     if message_quiet:
         print_message = silenced_print
@@ -188,6 +190,8 @@ def run(
                     line = line.removesuffix('\n')
                     if trim_output_lines:
                         line = line.rstrip()
+                    if replace_fffd_with_question_mark:
+                        line = line.replace('\ufffd', '?')
 
                     print_output(line)
 

@@ -37,6 +37,7 @@ Arguments (all of them except `cmd` are optional):
 - `cwd: str | Path` - If not `None`, change current working directory to `cwd` before running the command.
 - `encoding: str` - This encoding will be used to open stdout and stderr of the command. If unspecified or set to `None`, see default behaviour in `io.TextIOWrapper`'s documentation.
 - `errors: str` - This specifies how text decoding errors will be handled. (See possible options in `io.TextIOWrapper`'s documentation.) If unspecified or set to `None`, defaults to `replace`. Note that this differs from `io.TextIOWrapper`'s default behaviour, which is to use `strict`.
+- `replace_fffd_with_question_mark: bool` - Replace Unicode Replacement Character U+FFFD (`�`, usually introduced by `errors='replace'`) with ASCII question mark (`?`) in lines of the output of the command before calling `print_output` and adding them to the `output` field of `RunResult`. If unspecified or set to `None`, defaults to `True`.
 
 ### Return value: `fancy_subprocess.RunResult`
 
