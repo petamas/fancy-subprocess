@@ -28,19 +28,17 @@ def oslex_join(cmd: Sequence[str | Path]) -> str:
 def stringify_exit_code(exit_code: int) -> Optional[str]:
     if sys.platform=='win32':
         # Windows
-        try:
-            bits = ThirtyTwoBits(exit_code)
-        except ValueError:
+        if not ThirtyTwoBits.check(exit_code):
             return None
 
         try:
-            code = NtStatus(bits)
-            if code.severity!=NtStatusSeverity.STATUS_SEVERITY_SUCCESS:
-                return code.name
+            status = NtStatus.decode(exit_code)
+            if NtStatus.severity(status) != NtStatusSeverity.STATUS_SEVERITY_SUCCESS:
+                return status.name
         except ValueError:
             pass
 
-        return f'0x{bits.unsigned_value:08X}'
+        return f'0x{ThirtyTwoBits(exit_code).unsigned_value:08X}'
     else:
         # POSIX
         if exit_code<0:
